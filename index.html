@@ -1,1 +1,240 @@
-Explained here
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Kustomize: Bases &amp; Overlays</title>
+  <style>
+    :root {
+      color-scheme: light dark;
+      --bg: #0b1120;
+      --card: #131c2f;
+      --text: #e6ebf5;
+      --muted: #9aa7bd;
+      --accent: #5eead4;
+      --border: #23304a;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+    }
+    header {
+      padding: 3rem 1.5rem 1.5rem;
+      text-align: center;
+    }
+    header h1 {
+      margin: 0 0 0.5rem;
+      font-size: 2rem;
+      letter-spacing: -0.02em;
+    }
+    header p {
+      color: var(--muted);
+      max-width: 640px;
+      margin: 0 auto;
+    }
+    main {
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 1rem 1.5rem 4rem;
+    }
+    section {
+      margin-bottom: 3rem;
+    }
+    h2 {
+      font-size: 1.35rem;
+      border-left: 4px solid var(--accent);
+      padding-left: 0.75rem;
+      margin-bottom: 1rem;
+    }
+    .video-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 1.5rem;
+    }
+    @media (min-width: 720px) {
+      .video-grid { grid-template-columns: 1fr 1fr; }
+    }
+    .video-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+    }
+    .video-card video {
+      width: 100%;
+      display: block;
+      background: #000;
+    }
+    .video-card figcaption {
+      padding: 0.9rem 1rem;
+      font-size: 0.9rem;
+      color: var(--muted);
+    }
+    .video-card figcaption strong {
+      color: var(--text);
+      display: block;
+      margin-bottom: 0.25rem;
+    }
+    .beats {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      counter-reset: beat;
+    }
+    .beats li {
+      counter-increment: beat;
+      position: relative;
+      padding: 0.75rem 0 0.75rem 2.75rem;
+      border-bottom: 1px solid var(--border);
+    }
+    .beats li:last-child { border-bottom: none; }
+    .beats li::before {
+      content: counter(beat);
+      position: absolute;
+      left: 0;
+      top: 0.6rem;
+      width: 1.8rem;
+      height: 1.8rem;
+      border-radius: 50%;
+      background: var(--accent);
+      color: #062b26;
+      font-weight: 700;
+      font-size: 0.85rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .beats strong { display: block; }
+    .beats span { color: var(--muted); font-size: 0.92rem; }
+    .why-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 1rem;
+    }
+    @media (min-width: 720px) {
+      .why-grid { grid-template-columns: 1fr 1fr; }
+    }
+    .why-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.25rem;
+    }
+    .why-card h3 {
+      margin: 0 0 0.5rem;
+      font-size: 1rem;
+      color: var(--accent);
+    }
+    .why-card p { margin: 0; color: var(--muted); font-size: 0.94rem; }
+    pre {
+      background: #0a0f1c;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1rem;
+      overflow-x: auto;
+      font-size: 0.85rem;
+    }
+    footer {
+      text-align: center;
+      color: var(--muted);
+      font-size: 0.85rem;
+      padding: 2rem 0;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Kustomize: Bases &amp; Overlays</h1>
+    <p>A 90-second animation walking through why Kubernetes manifests get duplicated across environments, and how Kustomize fixes it with a single base and per-environment overlays.</p>
+  </header>
+
+  <main>
+    <section>
+      <h2>Watch the animation</h2>
+      <div class="video-grid">
+        <figure class="video-card">
+          <video controls preload="metadata" poster="">
+            <source src="assets/videos/kustomize-overlays-part1.mp4" type="video/mp4" />
+            Your browser does not support the video tag.
+          </video>
+          <figcaption>
+            <strong>Part 1 — The problem &amp; the base (0:00–0:45)</strong>
+            Title, the duplication problem across dev/staging/prod, and collapsing three copies into one base.
+          </figcaption>
+        </figure>
+        <figure class="video-card">
+          <video controls preload="metadata" poster="">
+            <source src="assets/videos/kustomize-overlays-part2.mp4" type="video/mp4" />
+            Your browser does not support the video tag.
+          </video>
+          <figcaption>
+            <strong>Part 2 — Overlays &amp; apply (0:45–1:30)</strong>
+            Overlays fanning out, strategic merge in action, the four kustomization fields, and kubectl apply -k.
+          </figcaption>
+        </figure>
+      </div>
+    </section>
+
+    <section>
+      <h2>Why Kustomize is needed</h2>
+      <div class="why-grid">
+        <div class="why-card">
+          <h3>Without it: copy-paste drift</h3>
+          <p>Three near-identical <code>deployment.yaml</code> files for dev, staging, and prod. Almost every line is shared, but two lines actually differ per environment: <code>replicas</code> and the image tag. A shared change means editing three files — three chances to drift, and three places a typo can hide.</p>
+        </div>
+        <div class="why-card">
+          <h3>With it: one base, many overlays</h3>
+          <p>Kustomize keeps a single <code>base/deployment.yaml</code> as the source of truth. Each environment gets a tiny <code>overlays/&lt;env&gt;/kustomization.yaml</code> that holds only its diff — a handful of lines instead of a full duplicate manifest. The base never knows its overlays exist.</p>
+        </div>
+        <div class="why-card">
+          <h3>Strategic merge, not templating</h3>
+          <p>Patches are matched to their target by <code>kind</code> + <code>name</code>, and list items (like containers) are merged by name. There's no templating language to learn — it's plain YAML in, plain YAML out, with Kustomize computing the merge.</p>
+        </div>
+        <div class="why-card">
+          <h3>No new tooling to run apps</h3>
+          <p>Kustomize is built into <code>kubectl</code>. <code>kubectl apply -k overlays/prod</code> renders the merged manifest and applies it directly — no extra CLI, no rendering step to remember, no secrets stored in a templating engine's values file.</p>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>What the animation teaches — seven beats (~90s)</h2>
+      <ol class="beats">
+        <li><strong>Title</strong><span>Kustomize: bases &amp; overlays.</span></li>
+        <li><strong>The duplication problem</strong><span>Three deployment.yaml files for dev, staging, prod. Shared lines dim; only <code>replicas</code> and the image tag light up. A shared change means editing three files.</span></li>
+        <li><strong>One base</strong><span>The three copies collapse into <code>base/deployment.yaml</code>, and <code>base/kustomization.yaml</code> appears listing the resources it owns.</span></li>
+        <li><strong>Overlays</strong><span>The base moves left; three overlay <code>kustomization.yaml</code> files fan out on the right, each connected back to the base. Each holds only its diff.</span></li>
+        <li><strong>Strategic merge</strong><span>base/deployment.yaml and overlays/prod/env.yaml side by side — match keys (kind + name), then the container name as the list merge key, flowing into the rendered result with overrides highlighted.</span></li>
+        <li><strong>The four fields</strong><span><code>overlays/prod/kustomization.yaml</code> annotated line by line: <code>resources</code>, <code>patches</code>, <code>images</code>, <code>replicas</code>.</span></li>
+        <li><strong>Apply</strong><span><code>kubectl apply -k overlays/prod</code> types out and prints what it configured.</span></li>
+      </ol>
+    </section>
+
+    <section>
+      <h2>The pattern, in code</h2>
+      <pre><code>base/
+  deployment.yaml
+  kustomization.yaml
+
+overlays/
+  dev/
+    kustomization.yaml
+  staging/
+    kustomization.yaml
+  prod/
+    kustomization.yaml
+    env.yaml
+
+$ kubectl apply -k overlays/prod</code></pre>
+    </section>
+  </main>
+
+  <footer>
+    kustomize in Kubernetes implementation
+  </footer>
+</body>
+</html>
